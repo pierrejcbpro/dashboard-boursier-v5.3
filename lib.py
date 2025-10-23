@@ -43,11 +43,32 @@ def save_mapping(m: dict):
 def _norm(s:str) -> str: return (s or "").strip().upper()
 
 def guess_yahoo_from_ls(ticker: str):
-    if not ticker: return None
-    t=_norm(ticker)
-    if "." in t: return t
-    if len(t)<=6 and t.isalnum(): return f"{t}.PA"
-    return None
+    """Essaye de deviner le suffixe Yahoo Finance à partir d’un ticker LS Exchange."""
+    if not ticker:
+        return None
+    t = ticker.strip().upper()
+
+    # Suffixes possibles : .PA (Euronext Paris), .BE (Bruxelles), .F (Frankfurt)
+    # LS Exchange code (TOTB, ADBE, AMZN, etc.)
+    # On tente de déterminer selon le pattern du ticker
+    if len(t) <= 5 and t.isalpha():
+        # Exemples de détection spécifiques
+        if t.endswith("B") and not t.endswith("AB"):  # TOTB, SIEB, etc.
+            return f"{t}.F"  # Francfort
+        elif t in ["BNP", "ORA", "AIR", "TTE", "MC", "SAN", "DG", "ACA", "GLE", "ENGI", "SU"]:
+            return f"{t}.PA"
+        else:
+            # Par défaut, Euronext Paris
+            return f"{t}.PA"
+
+    # Si ticker a déjà un suffixe .LS → on garde la racine
+    if t.endswith(".LS"):
+        base = t[:-3]
+        # LS = Londres => .L sur Yahoo
+        return f"{base}.L"
+
+    return t
+
 
 def maybe_guess_yahoo(s: str):
     s=_norm(s)
